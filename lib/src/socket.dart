@@ -191,6 +191,7 @@ class TurnSocket {
 
   /* ---------- Client transport ---------- */
   RawDatagramSocket? _udpTransport;
+  InternetAddress? _serverAddress;
   Socket? _tcpTransport;
   StreamSubscription<RawSocketEvent>? _udpSub;
   StreamSubscription<Uint8List>? _tcpSub;
@@ -254,12 +255,24 @@ class TurnSocket {
 
     switch (_opts.transportType) {
       case TransportType.udp:
-        final InternetAddressType atype = host.contains(':')
-            ? InternetAddressType.IPv6
-            : InternetAddressType.IPv4;
-        final InternetAddress bind = atype == InternetAddressType.IPv6
-            ? InternetAddress.anyIPv6
-            : InternetAddress.anyIPv4;
+        // Resolve the server host (may be a hostname like
+        // "stun.l.google.com") to an `InternetAddress` once, so subsequent
+        // `RawDatagramSocket.send` calls don't throw `ArgumentError` for
+        // non-IP literals.
+        final List<InternetAddress> resolved = await InternetAddress.lookup(
+          host,
+          type: host.contains(':')
+              ? InternetAddressType.IPv6
+              : InternetAddressType.any,
+        );
+        if (resolved.isEmpty) {
+          throw SocketException('Failed to resolve host: $host');
+        }
+        _serverAddress = resolved.first;
+        final InternetAddress bind =
+            _serverAddress!.type == InternetAddressType.IPv6
+                ? InternetAddress.anyIPv6
+                : InternetAddress.anyIPv4;
         _udpTransport = await RawDatagramSocket.bind(bind, 0);
         _attachUdp(_udpTransport!, host, port);
 
@@ -422,10 +435,11 @@ class TurnSocket {
     if (_destroyed) return;
     if (_opts.transportType == TransportType.udp) {
       final RawDatagramSocket? t = _udpTransport;
-      final String? host = _opts.serverHost;
-      if (t == null || host == null) return;
+      final InternetAddress? addr =
+          _serverAddress ?? _tryParseLiteral(_opts.serverHost);
+      if (t == null || addr == null) return;
       try {
-        t.send(buf, InternetAddress(host), _opts.serverPort);
+        t.send(buf, addr, _opts.serverPort);
       } catch (e) {
         _emitError(e);
       }
@@ -441,6 +455,13 @@ class TurnSocket {
   }
 
   /* ---------- Transport binding ---------- */
+
+  /// Parse [host] as an IP literal. Returns `null` if it isn't a valid
+  /// IPv4/IPv6 literal (callers should resolve hostnames separately).
+  InternetAddress? _tryParseLiteral(String? host) {
+    if (host == null) return null;
+    return InternetAddress.tryParse(host);
+  }
 
   void _attachTransport(Object transport) {
     if (transport is RawDatagramSocket) {

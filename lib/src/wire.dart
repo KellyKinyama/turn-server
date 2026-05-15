@@ -164,6 +164,75 @@ class Attr {
   static const int fingerprint = 0x8028;
 }
 
+/// Mapping from attribute type code → human-readable name.
+///
+/// Generated from the constants in [Attr]. Used by [StunAttribute.toString]
+/// to produce human-friendly debug output.
+const Map<int, String> attrName = <int, String>{
+  0x0001: 'MAPPED-ADDRESS',
+  0x0003: 'CHANGE-REQUEST',
+  0x0006: 'USERNAME',
+  0x0008: 'MESSAGE-INTEGRITY',
+  0x0009: 'ERROR-CODE',
+  0x000A: 'UNKNOWN-ATTRIBUTES',
+  0x000C: 'CHANNEL-NUMBER',
+  0x000D: 'LIFETIME',
+  0x0012: 'XOR-PEER-ADDRESS',
+  0x0013: 'DATA',
+  0x0014: 'REALM',
+  0x0015: 'NONCE',
+  0x0016: 'XOR-RELAYED-ADDRESS',
+  0x0017: 'REQUESTED-ADDRESS-FAMILY',
+  0x0018: 'EVEN-PORT',
+  0x0019: 'REQUESTED-TRANSPORT',
+  0x001A: 'DONT-FRAGMENT',
+  0x001B: 'ACCESS-TOKEN',
+  0x001C: 'MESSAGE-INTEGRITY-SHA256',
+  0x001D: 'PASSWORD-ALGORITHM',
+  0x001E: 'USERHASH',
+  0x0020: 'XOR-MAPPED-ADDRESS',
+  0x0022: 'RESERVATION-TOKEN',
+  0x0024: 'PRIORITY',
+  0x0025: 'USE-CANDIDATE',
+  0x0026: 'PADDING',
+  0x0027: 'RESPONSE-PORT',
+  0x002A: 'CONNECTION-ID',
+  0x8000: 'ADDITIONAL-ADDRESS-FAMILY',
+  0x8001: 'ADDRESS-ERROR-CODE',
+  0x8002: 'PASSWORD-ALGORITHMS',
+  0x8003: 'ALTERNATE-DOMAIN',
+  0x8004: 'ICMP',
+  0x8022: 'SOFTWARE',
+  0x8023: 'ALTERNATE-SERVER',
+  0x8025: 'TRANSACTION-TRANSMIT-COUNTER',
+  0x8027: 'CACHE-TIMEOUT',
+  0x8028: 'FINGERPRINT',
+  0x8029: 'ICE-CONTROLLED',
+  0x802A: 'ICE-CONTROLLING',
+  0x802B: 'RESPONSE-ORIGIN',
+  0x802C: 'OTHER-ADDRESS',
+  0x802D: 'ECN-CHECK',
+  0x802E: 'THIRD-PARTY-AUTHORIZATION',
+  0x802F: 'ORIGIN',
+  0x8030: 'MOBILITY-TICKET',
+  0xC000: 'CISCO-STUN-FLOWDATA',
+  0xC001: 'ENF-FLOW-DESCRIPTION',
+  0xC002: 'ENF-NETWORK-STATUS',
+  0xC003: 'CISCO-WEBEX-FLOW-INFO',
+  0xC056: 'CITRIX-TRANSACTION-ID',
+  0xC057: 'GOOG-NETWORK-INFO',
+  0xC058: 'GOOG-LAST-ICE-CHECK-RECEIVED',
+  0xC059: 'GOOG-MISC-INFO',
+  0xC05A: 'GOOG-OBSOLETE-1',
+  0xC05B: 'GOOG-CONNECTION-ID',
+  0xC05C: 'GOOG-DELTA',
+  0xC05D: 'GOOG-DELTA-ACK',
+  0xC05E: 'GOOG-DELTA-SYNC-REQ',
+  0xC060: 'GOOG-MESSAGE-INTEGRITY-32',
+  0xC070: 'META-DTLS-IN-STUN',
+  0xC071: 'META-DTLS-IN-STUN-ACK',
+};
+
 /// Standard STUN/TURN error codes.
 class ErrorCodeConstants {
   ErrorCodeConstants._();
@@ -265,7 +334,11 @@ class StunAddress {
   final int port;
 
   @override
-  String toString() => 'StunAddress($ip:$port, ipv${family == 1 ? '4' : '6'})';
+  String toString() {
+    final String fam = family == AddressFamily.ipv6 ? 'IPv6' : 'IPv4';
+    final String host = family == AddressFamily.ipv6 ? '[$ip]' : ip;
+    return '$host:$port ($fam)';
+  }
 }
 
 /// Decoded ERROR-CODE attribute value.
@@ -273,6 +346,10 @@ class StunErrorCode {
   const StunErrorCode({required this.code, this.reason = ''});
   final int code;
   final String reason;
+
+  @override
+  String toString() =>
+      'StunErrorCode($code ${reason.isEmpty ? errorReason[code] ?? '' : reason})';
 }
 
 /// Decoded CHANGE-REQUEST attribute value (RFC 5780).
@@ -280,6 +357,10 @@ class ChangeRequestValue {
   const ChangeRequestValue({this.changeIp = false, this.changePort = false});
   final bool changeIp;
   final bool changePort;
+
+  @override
+  String toString() =>
+      'ChangeRequest(changeIp: $changeIp, changePort: $changePort)';
 }
 
 /// Decoded ICMP attribute value (RFC 8656).
@@ -288,6 +369,10 @@ class IcmpValue {
   final int type;
   final int code;
   final int data;
+
+  @override
+  String toString() =>
+      'Icmp(type: $type, code: $code, data: 0x${data.toRadixString(16)})';
 }
 
 /// Decoded ECN-CHECK attribute value (RFC 6679).
@@ -295,6 +380,9 @@ class EcnCheckValue {
   const EcnCheckValue({required this.valid, required this.val});
   final bool valid;
   final bool val;
+
+  @override
+  String toString() => 'EcnCheck(valid: $valid, val: $val)';
 }
 
 /// Decoded ADDRESS-ERROR-CODE attribute value (RFC 8656).
@@ -307,6 +395,12 @@ class AddressErrorCodeValue {
   final int family;
   final int code;
   final String reason;
+
+  @override
+  String toString() {
+    final String fam = family == AddressFamily.ipv6 ? 'IPv6' : 'IPv4';
+    return 'AddressErrorCode($fam, $code ${reason.isEmpty ? errorReason[code] ?? '' : reason})';
+  }
 }
 
 /// PASSWORD-ALGORITHM entry (RFC 8489).
@@ -319,6 +413,16 @@ class PasswordAlgorithm {
 
   final int algorithm;
   final Uint8List params;
+
+  @override
+  String toString() {
+    final String name = switch (algorithm) {
+      md5 => 'MD5',
+      sha256 => 'SHA256',
+      _ => '0x${algorithm.toRadixString(16)}',
+    };
+    return 'PasswordAlgorithm($name, params: ${params.length}B)';
+  }
 }
 
 /// TRANSACTION-TRANSMIT-COUNTER attribute value (RFC 7982).
@@ -326,6 +430,9 @@ class TransactionTransmitCounter {
   const TransactionTransmitCounter({required this.req, required this.resp});
   final int req;
   final int resp;
+
+  @override
+  String toString() => 'TransactionTransmitCounter(req: $req, resp: $resp)';
 }
 
 /// ICE-CONTROLLED / ICE-CONTROLLING tiebreaker value (64-bit).
@@ -1262,6 +1369,10 @@ class DecodedChannelData {
 
   /// Zero-copy view over the input buffer (do not retain across mutation).
   final Uint8List data;
+
+  @override
+  String toString() =>
+      'ChannelData(channel: 0x${channel.toRadixString(16).padLeft(4, '0')}, ${data.length}B)';
 }
 
 Uint8List encodeChannelData(int channelNumber, Uint8List data) {
@@ -1309,6 +1420,15 @@ class StunUri {
   final bool secure;
   final bool isTurn;
   final Map<String, String> params;
+
+  @override
+  String toString() {
+    final String h = host.contains(':') ? '[$host]' : host;
+    final String p = params.isEmpty
+        ? ''
+        : '?${params.entries.map((MapEntry<String, String> e) => '${e.key}=${e.value}').join('&')}';
+    return '$scheme:$h:$port (transport: $transport)$p';
+  }
 }
 
 /// Parse a STUN/TURN URI per RFC 7064 / 7065.
@@ -1364,6 +1484,40 @@ class StunAttribute {
 
   /// Raw on-wire bytes (set after encode/decode).
   Uint8List? raw;
+
+  /// Human-readable name of [type] (e.g. `XOR-MAPPED-ADDRESS`), or a hex
+  /// fallback for unknown attribute codes.
+  String get name =>
+      attrName[type] ??
+      '0x${type.toRadixString(16).padLeft(4, '0').toUpperCase()}';
+
+  @override
+  String toString() {
+    final String v = _formatAttrValue(value, raw);
+    return 'StunAttribute($name = $v)';
+  }
+}
+
+String _formatAttrValue(Object? value, Uint8List? raw) {
+  if (value == null) {
+    if (raw == null || raw.isEmpty) return '<flag>';
+    return _hexBytes(raw);
+  }
+  if (value is Uint8List) return _hexBytes(value);
+  if (value is String) return '"$value"';
+  return value.toString();
+}
+
+String _hexBytes(Uint8List b) {
+  if (b.isEmpty) return '<empty>';
+  const int max = 32;
+  final StringBuffer sb = StringBuffer('0x');
+  final int n = b.length < max ? b.length : max;
+  for (int i = 0; i < n; i++) {
+    sb.write(b[i].toRadixString(16).padLeft(2, '0'));
+  }
+  if (b.length > max) sb.write('… (${b.length}B)');
+  return sb.toString();
 }
 
 class EncodedMessage {
@@ -1521,6 +1675,31 @@ class StunMessage {
   StunErrorCode? getErrorCode() => getAttribute<StunErrorCode>(Attr.errorCode);
 
   bool hasAttribute(int type) => attrMap.containsKey(type);
+
+  /// Hex-encoded transaction ID (12 bytes → 24 hex chars).
+  String get transactionIdHex {
+    final StringBuffer sb = StringBuffer();
+    for (final int b in transactionId) {
+      sb.write(b.toRadixString(16).padLeft(2, '0'));
+    }
+    return sb.toString();
+  }
+
+  @override
+  String toString() {
+    final String m = methodName ?? '0x${method.toRadixString(16)}';
+    final String c = className ?? '0x${cls.toRadixString(16)}';
+    final StringBuffer sb = StringBuffer()
+      ..writeln(
+          'StunMessage($m $c, tid: $transactionIdHex, ${attributes.length} attrs) {');
+    for (final StunAttribute a in attributes) {
+      sb
+        ..write('  ')
+        ..writeln(a);
+    }
+    sb.write('}');
+    return sb.toString();
+  }
 }
 
 const Map<int, String> _methodNameMap = methodName;

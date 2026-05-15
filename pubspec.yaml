@@ -1,7 +1,15 @@
 name: turn_server
-description: Production-grade STUN/TURN server and client for Dart - port of the Node.js turn-server library.
+description: Production-grade STUN/TURN server, client, and ICE agent for Dart - port of the Node.js turn-server library.
 version: 0.1.0
 repository: https://github.com/colocohen/turn-server
+issue_tracker: https://github.com/colocohen/turn-server/issues
+
+topics:
+  - stun
+  - turn
+  - ice
+  - webrtc
+  - networking
 
 environment:
   sdk: ^3.4.0

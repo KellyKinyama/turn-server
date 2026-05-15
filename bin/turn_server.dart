@@ -1,10 +1,10 @@
 import 'package:turn_server/src/server.dart';
 
-void main() async {
-  TurnServer server = TurnServer(TurnServerOptions(
+Future<void> main() async {
+  final TurnServer server = TurnServer(TurnServerOptions(
     listen: <ListenConfig>[
       const ListenConfig(
-          transport: ServerTransport.udp, address: '127.0.0.1', port: 0),
+          transport: ServerTransport.udp, address: '127.0.0.1', port: 3478),
     ],
     relay: const RelayServerConfig(
       ip: '127.0.0.1',
@@ -15,5 +15,6 @@ void main() async {
   final Future<ListeningEvent> listening = server.onListening.first;
   await server.start();
   final ListeningEvent ev = await listening;
-  int serverPort = ev.port;
+  print(
+      'TURN server listening on ${ev.address}:${ev.port} (${ev.transport.name})');
 }

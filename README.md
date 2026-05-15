@@ -6,7 +6,7 @@ Type-safe port of the Node.js
 
 [![Dart](https://img.shields.io/badge/dart-%5E3.4-blue.svg)](https://dart.dev)
 [![Tests](https://img.shields.io/badge/tests-62%20passing-brightgreen.svg)](#testing)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](#license)
 
 ---
 
@@ -263,7 +263,6 @@ agent.gather();                                  // re-gather
 ## Testing
 
 ```bash
-cd dart
 dart pub get
 dart analyze            # → No issues found!
 dart test               # → 62 tests passing
@@ -297,4 +296,4 @@ A few intentional omissions / changes vs. the JS implementation:
 
 ## License
 
-MIT — see [LICENSE](../LICENSE) at the repository root.
+Apache-2.0 — see [LICENSE](LICENSE).
