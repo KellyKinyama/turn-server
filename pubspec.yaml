@@ -1,0 +1,15 @@
+name: turn_server
+description: Production-grade STUN/TURN server and client for Dart - port of the Node.js turn-server library.
+version: 0.1.0
+repository: https://github.com/colocohen/turn-server
+
+environment:
+  sdk: ^3.4.0
+
+dependencies:
+  crypto: ^3.0.3            # MD5, SHA1, SHA256, SHA384, SHA512, HMAC
+  basic_utils: ^5.7.0       # DNS SRV lookups (used by index.dart resolve())
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^4.0.0
